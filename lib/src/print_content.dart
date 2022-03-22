@@ -15,7 +15,7 @@ class PrintContent {
 
   PrintContent({
     this.data = 'Null data',
-    required this.codePage,
+    this.codePage = 'CP1252',
     required this.width,
     this.margin = 0,
     this.textFont = 'Font A',
@@ -29,8 +29,8 @@ class PrintContent {
 
   factory PrintContent.fromWrapText(
           {required String data,
-          required String codePage,
           required int width,
+          String codePage = 'CP1252',
           int margin = 0,
           String textFont = 'Font A',
           int textWidth = 1,
@@ -40,9 +40,6 @@ class PrintContent {
           bool overridable = false,
           bool truncatable = true}) =>
       PrintContent(
-
-          ///TODO: NORMALIZE CAUSE APP SLOW
-          //data: TiengViet.parse(unorm.nfd(data)),
           data: TiengViet.parse(data),
           codePage: codePage,
           textFont: textFont,

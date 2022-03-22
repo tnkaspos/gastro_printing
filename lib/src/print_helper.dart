@@ -9,30 +9,30 @@ import 'package:gastro_printing/src/print.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 
 abstract class PrintHelper {
-  String getFitContent(String _input, int _maxLenght, {int anchorStyle = 0}) {
+  String getFitContent(String _input, int _maxLength, {int anchorStyle = 0}) {
     int padLeft = 0;
     int padRight = 0;
     switch (anchorStyle) {
 
-    ///Left Alignment
+      ///Left Alignment
       case 0:
         {
-          padLeft = _maxLenght - _input.length > 0 ? _maxLenght - _input.length : 0;
+          padLeft = _maxLength - _input.length > 0 ? _maxLength - _input.length : 0;
         }
         break;
 
-    ///Center Alignment
+      ///Center Alignment
       case 1:
         {
-          padLeft = (_maxLenght - _input.length) / 2 as int > 0 ? (_maxLenght - _input.length) / 2 as int : 0;
-          padRight = _maxLenght - _input.length - padLeft;
+          padLeft = (_maxLength - _input.length) / 2 as int > 0 ? (_maxLength - _input.length) / 2 as int : 0;
+          padRight = _maxLength - _input.length - padLeft;
         }
         break;
 
-    ///Right Alignment
+      ///Right Alignment
       case 2:
         {
-          padRight = _maxLenght - _input.length > 0 ? _maxLenght - _input.length : 0;
+          padRight = _maxLength - _input.length > 0 ? _maxLength - _input.length : 0;
         }
         break;
       default:
@@ -64,34 +64,46 @@ abstract class PrintHelper {
             break;
         }
       } catch (e) {
-        logger(e.toString());
+        logDebug(e.toString());
       }
     }
     // printer.cut();
   }
 
-  Future<bool> ping(String host, int port, Duration timeout) async {
+  Future<PrintResult> ping(String host, int port, Duration timeout, {int tryOut = 1}) async {
     late Socket _socket;
-    try {
-      _socket = await Socket.connect(host, port, timeout: timeout);
-      _socket.destroy();
-      return true;
-    } catch (e) {
-      return false;
+    bool connected = false;
+    String status = 'CONNECTED';
+    String exception = 'OK';
+    int reCheck = 0;
+    while (reCheck < tryOut) {
+      try {
+        _socket = await Socket.connect(host, port, timeout: timeout);
+        _socket.destroy();
+        connected = true;
+        status = 'CONNECTED';
+        exception = 'OK';
+      } catch (e) {
+        connected = false;
+        status = 'DISCONNECTED';
+        exception = e.toString();
+      }
+      reCheck++;
     }
+    return PrintResult(success: connected, printerHost: host, printerStatus: status, exception: exception);
   }
 
   ///Network
-  Future<bool> testNetworkConnection(String host, int port, List<int> command) async {
+  Future<PrintResult> testNetworkConnection(String host, int port, List<int> command) async {
     String _secureResponse = '20, 0, 0, 15';
-    String _printerResponse = '';
+    String _printerResponse = 'TIME OUT';
     late Socket _socket;
     Stopwatch watch = Stopwatch();
     watch.start();
     Completer<String> _completer = Completer<String>();
 
     try {
-      _socket = await Socket.connect(host, port, timeout: const Duration(seconds: 1));
+      _socket = await Socket.connect(host, port, timeout: const Duration(seconds: 5));
 
       /// SENT TO SERVER ************************
       _socket.add(command);
@@ -110,14 +122,21 @@ abstract class PrintHelper {
       }), onDone: () async {
         _socket.destroy();
       }, cancelOnError: false);
-      _printerResponse = await _completer.future.timeout(
-          Duration(seconds: 3),
-          onTimeout: () => _printerResponse = '');
-      logger('[testNetworkConnection] AT HOST ${host} COMPLETED IN ${watch.elapsed.inSeconds} WITH \'$_printerResponse\'');
-      return _printerResponse.contains(_secureResponse);
+      _printerResponse =
+          await _completer.future.timeout(Duration(seconds: 5), onTimeout: () => throw Exception('TIME OUT'));
+      return PrintResult(
+        success: _printerResponse.contains(_secureResponse),
+        printerHost: host,
+        printerStatus: _printerResponse,
+        exception: 'OK',
+      );
     } catch (e) {
-      logger('[testNetworkConnection] AT HOST ${host} TIMED_OUT AFTER ${watch.elapsed.inSeconds} WITH \'$_printerResponse\'');
-      return (_printerResponse.contains(_secureResponse));
+      return PrintResult(
+        success: _printerResponse.contains(_secureResponse),
+        printerHost: host,
+        printerStatus: _printerResponse,
+        exception: e.toString(),
+      );
     }
   }
 
@@ -144,11 +163,11 @@ abstract class PrintHelper {
             break;
         }
       } catch (e) {
-        logger(e.toString());
+        logDebug(e.toString());
       }
     }
     final result = await PrintBluetoothThermal.writeBytes(bytes);
-    logger("Print test is $result");
+    logDebug("Print test is $result");
     // printer.cut();
   }
 
@@ -158,7 +177,7 @@ abstract class PrintHelper {
       await PrintBluetoothThermal.disconnect;
     }
     connectionStatus = await PrintBluetoothThermal.connect(macPrinterAddress: mac);
-    logger("state connected $connectionStatus");
+    logDebug("state connected $connectionStatus");
     await Future.delayed(const Duration(milliseconds: 200));
     if (connectionStatus) {
       await PrintBluetoothThermal.disconnect;
@@ -187,7 +206,7 @@ abstract class PrintHelper {
     }
   }
 
-  void logger(String msg) {
+  void logDebug(String msg) {
     debugPrint(msg);
   }
 

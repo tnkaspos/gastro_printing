@@ -31,13 +31,19 @@ abstract class GastroPrinting extends PrintHelper {
     }
   }
 
-  Future<bool> printNetworkElements(String printerHost, int printerPort, List<PrintElement> elements) async {
+  Future<PrintResult> printNetworkElements(String printerHost, int printerPort, List<PrintElement> elements,
+      {int tryOut = 5}) async {
     try {
       return await printingQueue.add(() async {
-        return await printTaskNetwork(printerHost, printerPort, elements);
+        return await printTaskNetwork(printerHost, printerPort, elements, tryOut);
       });
-    } on Exception {
-      return false;
+    } catch (e) {
+      return PrintResult(
+        success: false,
+        printerHost: printerHost,
+        printerStatus: 'PRINT FAILED',
+        exception: e.toString(),
+      );
     }
   }
 
@@ -50,9 +56,10 @@ abstract class GastroPrinting extends PrintHelper {
     }
   }
 
-  Future<bool> printTaskNetwork(String printerHost, int printerPort, List<PrintElement> elements) async {
-    bool printable = await connectNetworkPrinter(printerHost, printerPort, tryOut: 5);
-    if (printable) {
+  Future<PrintResult> printTaskNetwork(
+      String printerHost, int printerPort, List<PrintElement> elements, int tryOut) async {
+    PrintResult result = await connectNetworkPrinter(printerHost, printerPort, tryOut);
+    if (result.success) {
       try {
         int reConnect = 0;
         final profile = await CapabilityProfile.load();
@@ -68,17 +75,19 @@ abstract class GastroPrinting extends PrintHelper {
         if (res == PosPrintResult.success) {
           sendDataToNetworkPrinter(printer, elements);
           printer.disconnect();
-          return printable;
         } else {
-          return !printable;
+          result = PrintResult(
+            success: false,
+            printerHost: printerHost,
+            printerStatus: res.msg,
+            exception: 'DUE TO ${res.msg}',
+          );
         }
       } catch (e) {
-        logger(e.toString());
-        return !printable;
+        logDebug(e.toString());
       }
-    } else {
-      return printable;
     }
+    return result;
   }
 
   Future<bool> printTaskBluetooth(BluetoothInfo bluetoothPrinter, List<PrintElement> elements) async {
@@ -98,28 +107,29 @@ abstract class GastroPrinting extends PrintHelper {
         await PrintBluetoothThermal.disconnect;
       }
     } catch (e) {
-      logger(e.toString());
+      logDebug(e.toString());
     }
 
     return true;
   }
 
-  Future<bool> connectNetworkPrinter(String printerHost, int printerPort, {int tryOut = 1}) async {
-    bool printable = false;
-    if (await ping(printerHost, printerPort, Duration(seconds: 2))) {
+  Future<PrintResult> connectNetworkPrinter(String printerHost, int printerPort, int tryOut) async {
+    PrintResult pingResult = await ping(printerHost, printerPort, Duration(seconds: 2), tryOut: 2);
+    if (pingResult.success) {
       final List<int> checkPrinter = <int>[
         int.parse('1D', radix: 16),
         int.parse('61', radix: 16),
         int.parse('0F', radix: 16)
       ];
       int reCheck = 0;
-      while (!printable && reCheck < tryOut) {
-        printable = await testNetworkConnection(printerHost, printerPort, checkPrinter);
+      PrintResult statusResult = await testNetworkConnection(printerHost, printerPort, checkPrinter);
+      while (!statusResult.success && reCheck < tryOut) {
+        statusResult = await testNetworkConnection(printerHost, printerPort, checkPrinter);
         reCheck++;
       }
+      return statusResult;
     } else {
-      printable = false;
+      return pingResult;
     }
-    return printable;
   }
 }
