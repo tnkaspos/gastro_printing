@@ -42,6 +42,7 @@ abstract class GastroPrinting extends PrintHelper {
         success: false,
         printerHost: printerHost,
         printerStatus: 'PRINT FAILED',
+        printerException: 'PRINT FAILED',
         exception: e.toString(),
       );
     }
@@ -56,8 +57,8 @@ abstract class GastroPrinting extends PrintHelper {
     }
   }
 
-  Future<PrintResult> printTaskNetwork(
-      String printerHost, int printerPort, List<PrintElement> elements, int tryOut) async {
+  Future<PrintResult> printTaskNetwork(String printerHost, int printerPort, List<PrintElement> elements,
+      int tryOut) async {
     PrintResult result = await connectNetworkPrinter(printerHost, printerPort, tryOut);
     if (result.success) {
       try {
@@ -72,19 +73,29 @@ abstract class GastroPrinting extends PrintHelper {
           reConnect++;
         }
 
+        String printerException = '';
+
         if (res == PosPrintResult.success) {
-          sendDataToNetworkPrinter(printer, elements);
+          printerException = await sendDataToNetworkPrinter(printer, elements);
           printer.disconnect();
+          result = await connectNetworkPrinter(printerHost, printerPort, tryOut);
         } else {
           result = PrintResult(
             success: false,
             printerHost: printerHost,
             printerStatus: res.msg,
+            printerException: res.msg,
             exception: 'DUE TO ${res.msg}',
           );
         }
       } catch (e) {
-        logDebug(e.toString());
+        result = PrintResult(
+          success: false,
+          printerHost: printerHost,
+          printerStatus: e.toString(),
+          printerException: e.toString(),
+          exception: 'DUE TO ${e.toString()}',
+        );
       }
     }
     return result;

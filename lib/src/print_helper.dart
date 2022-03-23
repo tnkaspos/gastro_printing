@@ -43,7 +43,8 @@ abstract class PrintHelper {
   }
 
   ///Network
-  void sendDataToNetworkPrinter(NetworkPrinter printer, List<PrintElement> elements) {
+  Future<String> sendDataToNetworkPrinter(NetworkPrinter printer, List<PrintElement> elements) async {
+    String sendResult = '';
     for (PrintElement e in elements) {
       try {
         switch (e.type) {
@@ -64,10 +65,11 @@ abstract class PrintHelper {
             break;
         }
       } catch (e) {
-        logDebug(e.toString());
+        logDebug('SEND DATA TO PRINTER ${e.toString()}');
+        sendResult = e.toString();
       }
     }
-    // printer.cut();
+    return '${sendResult.isEmpty ? 'COMPLETED' : 'FAILED DUE TO $sendResult'}';
   }
 
   Future<PrintResult> ping(String host, int port, Duration timeout, {int tryOut = 1}) async {
@@ -90,7 +92,8 @@ abstract class PrintHelper {
       }
       reCheck++;
     }
-    return PrintResult(success: connected, printerHost: host, printerStatus: status, exception: exception);
+    return PrintResult(
+        success: connected, printerHost: host, printerStatus: status, printerException: status, exception: exception);
   }
 
   ///Network
@@ -128,6 +131,7 @@ abstract class PrintHelper {
         success: _printerResponse.contains(_secureResponse),
         printerHost: host,
         printerStatus: _printerResponse,
+        printerException: _printerResponse,
         exception: 'OK',
       );
     } catch (e) {
@@ -135,6 +139,7 @@ abstract class PrintHelper {
         success: _printerResponse.contains(_secureResponse),
         printerHost: host,
         printerStatus: _printerResponse,
+        printerException: e.toString(),
         exception: e.toString(),
       );
     }
@@ -167,8 +172,7 @@ abstract class PrintHelper {
       }
     }
     final result = await PrintBluetoothThermal.writeBytes(bytes);
-    logDebug("Print test is $result");
-    // printer.cut();
+    logDebug('Print test is $result');
   }
 
   Future<bool> testBluetoothConnection(String mac) async {
