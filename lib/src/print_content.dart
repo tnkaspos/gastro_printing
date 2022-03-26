@@ -1,5 +1,3 @@
-import 'package:tiengviet/tiengviet.dart';
-
 class PrintContent {
   String? data;
   String codePage;
@@ -40,7 +38,7 @@ class PrintContent {
           bool overridable = false,
           bool truncatable = true}) =>
       PrintContent(
-          data: TiengViet.parse(data),
+          data: data,
           codePage: codePage,
           textFont: textFont,
           width: width,

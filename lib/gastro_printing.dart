@@ -3,20 +3,15 @@ library gastro_printing;
 import 'dart:convert';
 import 'dart:core';
 
-import 'package:esc_pos_printer/esc_pos_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:gastro_printing/src/print.dart';
 import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:queue/queue.dart';
-
-import 'src/print.dart';
 
 export 'src/print.dart';
 
 abstract class GastroPrinting extends PrintHelper {
-  final printingQueue = Queue(
-    parallel: 1,
-    timeout: const Duration(seconds: 3600),
-  );
+  final Map<String, Queue> printerQueue = {};
 
   Future<String> getCodePage() async {
     final profile = await CapabilityProfile.load();
@@ -34,9 +29,26 @@ abstract class GastroPrinting extends PrintHelper {
   Future<PrintResult> printNetworkElements(String printerHost, int printerPort, List<PrintElement> elements,
       {int tryOut = 5}) async {
     try {
-      return await printingQueue.add(() async {
-        return await printTaskNetwork(printerHost, printerPort, elements, tryOut);
-      });
+      PrintResult result;
+      if (printerQueue.containsKey(printerHost)) {
+        result = await printerQueue[printerHost]!.add(() async {
+          logDebug('PRINTER QUEUE: ADD NEW TASK TO $printerHost');
+          return await printTaskNetwork(printerHost, printerPort, elements, tryOut);
+        });
+        logDebug('PRINTER QUEUE: A TASK IN $printerHost COMPLETED WITH ${result.toString()}');
+      } else {
+        logDebug('PRINTER QUEUE: ADD NEW QUEUE IS $printerHost');
+        printerQueue[printerHost] = Queue(
+          parallel: 1,
+          timeout: const Duration(seconds: 3600),
+        );
+        result = await printerQueue[printerHost]!.add(() async {
+          logDebug('PRINTER QUEUE: ADD NEW TASK TO $printerHost');
+          return await printTaskNetwork(printerHost, printerPort, elements, tryOut);
+        });
+        logDebug('PRINTER QUEUE: A TASK IN $printerHost COMPLETED WITH ${result.toString()}');
+      }
+      return result;
     } catch (e) {
       return PrintResult(
         success: false,
@@ -51,42 +63,40 @@ abstract class GastroPrinting extends PrintHelper {
   Future<bool> printBluetoothElements(String deviceName, String deviceAddress, List<PrintElement> elements) async {
     try {
       BluetoothInfo blueDevice = BluetoothInfo(name: deviceName, macAddress: deviceAddress);
-      return await printingQueue.add(() => printTaskBluetooth(blueDevice, elements));
+      if (printerQueue.containsKey(deviceAddress)) {
+        return await printerQueue[deviceAddress]!.add(() async {
+          return await printTaskBluetooth(blueDevice, elements);
+        });
+      } else {
+        printerQueue[deviceAddress] = Queue(
+          parallel: 1,
+          timeout: const Duration(seconds: 3600),
+        );
+        return await printerQueue[deviceAddress]!.add(() async {
+          return await printTaskBluetooth(blueDevice, elements);
+        });
+      }
     } on Exception {
       return false;
     }
   }
 
-  Future<PrintResult> printTaskNetwork(String printerHost, int printerPort, List<PrintElement> elements,
-      int tryOut) async {
+  Future<PrintResult> printTaskNetwork(
+    String printerHost,
+    int printerPort,
+    List<PrintElement> elements,
+    int tryOut,
+  ) async {
     PrintResult result = await connectNetworkPrinter(printerHost, printerPort, tryOut);
     if (result.success) {
       try {
-        int reConnect = 0;
         final profile = await CapabilityProfile.load();
-        final printer = NetworkPrinter(PaperSize.mm80, profile);
+        final generator = Generator(PaperSize.mm80, profile);
 
-        PosPrintResult res = await printer.connect(printerHost, port: printerPort, timeout: const Duration(seconds: 2));
-
-        while (res != PosPrintResult.success && reConnect < 5) {
-          res = await printer.connect(printerHost, port: printerPort, timeout: const Duration(seconds: 1));
-          reConnect++;
-        }
-
-        String printerException = '';
-
-        if (res == PosPrintResult.success) {
-          printerException = await sendDataToNetworkPrinter(printer, elements);
-          printer.disconnect();
-          result = await connectNetworkPrinter(printerHost, printerPort, tryOut);
-        } else {
-          result = PrintResult(
-            success: false,
-            printerHost: printerHost,
-            printerStatus: res.msg,
-            printerException: res.msg,
-            exception: 'DUE TO ${res.msg}',
-          );
+        List<int> bytes = bytesGenerator(generator, elements);
+        result = await sendBytesToNetworkPrinter(printerHost, printerPort, bytes);
+        if (result.printerException.contains('20, 0, 64, 15')) {
+          result = await connectNetworkPrinter(printerHost, printerPort, 1);
         }
       } catch (e) {
         result = PrintResult(
@@ -108,20 +118,22 @@ abstract class GastroPrinting extends PrintHelper {
     }
 
     connectionStatus = await PrintBluetoothThermal.connect(macPrinterAddress: bluetoothPrinter.macAddress);
+    bool result = false;
 
     try {
       final profile = await CapabilityProfile.load();
       final printer = Generator(PaperSize.mm58, profile);
 
       if (connectionStatus) {
-        await sendDataToBluetoothPrinter(printer, elements);
+        List<int> bytes = bytesGenerator(printer, elements);
+        result = await PrintBluetoothThermal.writeBytes(bytes);
         await PrintBluetoothThermal.disconnect;
       }
     } catch (e) {
       logDebug(e.toString());
     }
 
-    return true;
+    return result;
   }
 
   Future<PrintResult> connectNetworkPrinter(String printerHost, int printerPort, int tryOut) async {
@@ -133,9 +145,9 @@ abstract class GastroPrinting extends PrintHelper {
         int.parse('0F', radix: 16)
       ];
       int reCheck = 0;
-      PrintResult statusResult = await testNetworkConnection(printerHost, printerPort, checkPrinter);
+      PrintResult statusResult = await sendBytesToNetworkPrinter(printerHost, printerPort, checkPrinter);
       while (!statusResult.success && reCheck < tryOut) {
-        statusResult = await testNetworkConnection(printerHost, printerPort, checkPrinter);
+        statusResult = await sendBytesToNetworkPrinter(printerHost, printerPort, checkPrinter);
         reCheck++;
       }
       return statusResult;

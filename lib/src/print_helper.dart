@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:esc_pos_printer/esc_pos_printer.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter/material.dart';
 import 'package:gastro_printing/src/print.dart';
@@ -42,36 +41,49 @@ abstract class PrintHelper {
     return _ret;
   }
 
-  ///Network
-  Future<String> sendDataToNetworkPrinter(NetworkPrinter printer, List<PrintElement> elements) async {
-    String sendResult = '';
+  List<int> bytesGenerator(Generator printer, List<PrintElement> elements) {
+    List<int> bytes = [];
+    final List<int> checkPrinter = <int>[
+      int.parse('1D', radix: 16),
+      int.parse('61', radix: 16),
+      int.parse('0F', radix: 16),
+    ];
     for (PrintElement e in elements) {
-      try {
-        switch (e.type) {
-          case PrintElementType.char:
-            {
-              printer.hr(ch: e.columnList[0].text);
+      switch (e.type) {
+        case PrintElementType.char:
+          {
+            try {
+              bytes += printer.hr(ch: e.columnList[0].text);
+            } catch (e) {
+              logDebug(e.toString());
             }
-            break;
-          case PrintElementType.string:
-            {
-              printer.row(e.columnList);
+          }
+          break;
+        case PrintElementType.string:
+          {
+            try {
+              bytes += printer.row(e.columnList);
+            } catch (e) {
+              logDebug(e.toString());
             }
-            break;
-          case PrintElementType.command:
-            {
-              printer.cut();
+          }
+          break;
+        case PrintElementType.command:
+          {
+            try {
+              bytes += printer.cut();
+            } catch (e) {
+              logDebug(e.toString());
             }
-            break;
-        }
-      } catch (e) {
-        logDebug('SEND DATA TO PRINTER ${e.toString()}');
-        sendResult = e.toString();
+          }
+          break;
       }
     }
-    return '${sendResult.isEmpty ? 'COMPLETED' : 'FAILED DUE TO $sendResult'}';
+    bytes += checkPrinter;
+    return bytes;
   }
 
+  ///Network
   Future<PrintResult> ping(String host, int port, Duration timeout, {int tryOut = 1}) async {
     late Socket _socket;
     bool connected = false;
@@ -96,13 +108,10 @@ abstract class PrintHelper {
         success: connected, printerHost: host, printerStatus: status, printerException: status, exception: exception);
   }
 
-  ///Network
-  Future<PrintResult> testNetworkConnection(String host, int port, List<int> command) async {
+  Future<PrintResult> sendBytesToNetworkPrinter(String host, int port, List<int> command) async {
     String _secureResponse = '20, 0, 0, 15';
     String _printerResponse = 'TIME OUT';
     late Socket _socket;
-    Stopwatch watch = Stopwatch();
-    watch.start();
     Completer<String> _completer = Completer<String>();
 
     try {
@@ -125,8 +134,10 @@ abstract class PrintHelper {
       }), onDone: () async {
         _socket.destroy();
       }, cancelOnError: false);
-      _printerResponse =
-          await _completer.future.timeout(Duration(seconds: 5), onTimeout: () => throw Exception('TIME OUT'));
+      _printerResponse = await _completer.future.timeout(Duration(seconds: 10), onTimeout: () {
+        throw Exception('TIME OUT');
+      });
+      logDebug('PRINTER RESPONSE: $host RETURNED $_printerResponse');
       return PrintResult(
         success: _printerResponse.contains(_secureResponse),
         printerHost: host,
@@ -146,35 +157,6 @@ abstract class PrintHelper {
   }
 
   ///Bluetooth
-  Future<void> sendDataToBluetoothPrinter(Generator printer, List<PrintElement> contents) async {
-    List<int> bytes = [];
-    for (var e in contents) {
-      try {
-        switch (e.type) {
-          case PrintElementType.char:
-            {
-              bytes += printer.hr(ch: e.columnList[0].text);
-            }
-            break;
-          case PrintElementType.string:
-            {
-              bytes += printer.row(e.columnList);
-            }
-            break;
-          case PrintElementType.command:
-            {
-              bytes += printer.cut();
-            }
-            break;
-        }
-      } catch (e) {
-        logDebug(e.toString());
-      }
-    }
-    final result = await PrintBluetoothThermal.writeBytes(bytes);
-    logDebug('Print test is $result');
-  }
-
   Future<bool> testBluetoothConnection(String mac) async {
     bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
     if (connectionStatus) {
