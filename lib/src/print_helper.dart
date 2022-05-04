@@ -55,7 +55,7 @@ abstract class PrintHelper {
             try {
               bytes += printer.hr(ch: e.columnList[0].text);
             } catch (e) {
-              logDebug(e.toString());
+              logDebug('BYTE EXCEPTION', e.toString());
             }
           }
           break;
@@ -64,7 +64,7 @@ abstract class PrintHelper {
             try {
               bytes += printer.row(e.columnList);
             } catch (e) {
-              logDebug(e.toString());
+              logDebug('BYTE EXCEPTION', e.toString());
             }
           }
           break;
@@ -73,7 +73,7 @@ abstract class PrintHelper {
             try {
               bytes += printer.cut();
             } catch (e) {
-              logDebug(e.toString());
+              logDebug('BYTE EXCEPTION', e.toString());
             }
           }
           break;
@@ -84,7 +84,7 @@ abstract class PrintHelper {
   }
 
   ///Network
-  Future<PrintResult> ping(String host, int port, Duration timeout, {int tryOut = 1}) async {
+  Future<PrintResult> ping(String host, int port, Duration timeout, int tryOut) async {
     late Socket _socket;
     bool connected = false;
     String status = 'CONNECTED';
@@ -104,8 +104,14 @@ abstract class PrintHelper {
       }
       reCheck++;
     }
+
     return PrintResult(
-        success: connected, printerHost: host, printerStatus: status, printerException: status, exception: exception);
+      success: connected,
+      printerHost: host,
+      printerStatus: status,
+      printerException: status,
+      exception: exception,
+    );
   }
 
   Future<PrintResult> sendBytesToNetworkPrinter(String host, int port, List<int> command) async {
@@ -115,7 +121,7 @@ abstract class PrintHelper {
     Completer<String> _completer = Completer<String>();
 
     try {
-      _socket = await Socket.connect(host, port, timeout: const Duration(seconds: 5));
+      _socket = await Socket.connect(host, port, timeout: const Duration(seconds: 1));
 
       /// SENT TO SERVER ************************
       _socket.add(command);
@@ -134,15 +140,15 @@ abstract class PrintHelper {
       }), onDone: () async {
         _socket.destroy();
       }, cancelOnError: false);
-      _printerResponse = await _completer.future.timeout(Duration(seconds: 10), onTimeout: () {
+      _printerResponse = await _completer.future.timeout(Duration(seconds: 5), onTimeout: () {
         throw Exception('TIME OUT');
       });
-      logDebug('PRINTER RESPONSE: $host RETURNED $_printerResponse');
+      logDebug('PRINTER RESPONSE', '$host RETURNED $_printerResponse');
       return PrintResult(
         success: _printerResponse.contains(_secureResponse),
         printerHost: host,
-        printerStatus: _printerResponse,
-        printerException: _printerResponse,
+        printerStatus: _printerResponse.contains(_secureResponse) ? 'ONLINE' : _printerResponse,
+        printerException: _printerResponse.contains(_secureResponse) ? '' : _printerResponse,
         exception: 'OK',
       );
     } catch (e) {
@@ -163,7 +169,6 @@ abstract class PrintHelper {
       await PrintBluetoothThermal.disconnect;
     }
     connectionStatus = await PrintBluetoothThermal.connect(macPrinterAddress: mac);
-    logDebug("state connected $connectionStatus");
     await Future.delayed(const Duration(milliseconds: 200));
     if (connectionStatus) {
       await PrintBluetoothThermal.disconnect;
@@ -192,11 +197,16 @@ abstract class PrintHelper {
     }
   }
 
-  void logDebug(String msg) {
-    debugPrint(msg);
+  void logDebug(String header, String content) {
+    printWrapped('PRINTING LOG: [$header] $content');
   }
 
-  void logProduct(String msg) {
-    print(msg);
+  void printWrapped(String text) {
+    final pattern = RegExp('.{1,800}'); // 800 is the size of each chunk
+    pattern.allMatches(text).forEach((match) => debugPrint(match.group(0)));
+  }
+
+  void logProduct(String header, String content) {
+    printWrapped('PRINTING LOG: [$header] $content');
   }
 }
