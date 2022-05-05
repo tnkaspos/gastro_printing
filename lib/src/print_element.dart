@@ -23,7 +23,7 @@ class PrintElement {
   }) {
     List<PosColumn> contentList = [
       PosColumn(
-          text: character.data!, //List.filled(character.width * 4 - 2, character.data!).join(),
+          text: character.data!,
           width: character.width,
           truncatable: character.truncatable,
           overridable: character.overridable,
@@ -618,31 +618,4 @@ class PrintElement {
     ];
     return PrintElement(contentList);
   }
-
-// factory PrintElement.fromFourCols({
-//   required PrintContent col1,
-//   required PrintContent col2,
-//   required PrintContent col3,
-//   required PrintContent col4,
-// }) {
-//   List<PosColumn> contentList = [
-//     PosColumn(
-//         text: leftContent.data,
-//         width: leftContent.width,
-//         styles: PosStyles(
-//           codeTable: 'CP1252',
-//           align: PosAlign.left,
-//           bold: leftContent.bold,
-//         )),
-//     PosColumn(
-//         text: rightContent.data,
-//         width: rightContent.width,
-//         styles: PosStyles(
-//           codeTable: 'CP1252',
-//           align: PosAlign.right,
-//           bold: rightContent.bold,
-//         )),
-//   ];
-//   return PrintElement(contentList);
-// }
 }

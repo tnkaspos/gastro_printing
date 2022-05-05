@@ -74,11 +74,9 @@ packages:
   esc_pos_utils:
     dependency: "direct main"
     description:
-      path: "."
-      ref: HEAD
-      resolved-ref: "12ab78d2bb9449c58cbba56762aabf2508142097"
-      url: "https://github.com/DucPhan13/esc_pos_utils.git"
-    source: git
+      path: "D:/TNKAS/Flutter/Package Null Safety/esc_pos_utils"
+      relative: false
+    source: path
     version: "2.0.0"
   fake_async:
     dependency: transitive
