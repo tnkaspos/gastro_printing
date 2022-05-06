@@ -31,23 +31,28 @@ abstract class GastroPrinting extends PrintHelper {
     int printerPort,
     List<PrintElement> elements, {
     int tryOut = 5,
+    DateTime? taskTime,
   }) async {
     try {
       PrintResult result;
       if (printerQueue.containsKey(printerHost)) {
         result = await printerQueue[printerHost]!.add(() async {
-          logDebug('PRINTER QUEUE', 'ADD NEW TASK TO $printerHost');
-          return await printTaskNetwork(printerHost, printerPort, elements, tryOut);
+          logDebug(
+              'PRINTER QUEUE', 'ADD NEW TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] TO $printerHost');
+          return await printTaskNetwork(printerHost, printerPort, elements, tryOut, taskTime: taskTime);
         });
-        logDebug('PRINTER QUEUE', 'A TASK IN $printerHost COMPLETED WITH ${result.toString()}');
+        logDebug('PRINTER QUEUE',
+            'TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] IN $printerHost COMPLETED WITH ${result.toString()}');
       } else {
         logDebug('PRINTER QUEUE', 'ADD NEW QUEUE IS $printerHost');
         printerQueue[printerHost] = Queue(parallel: 1, timeout: const Duration(seconds: 30));
         result = await printerQueue[printerHost]!.add(() async {
-          logDebug('PRINTER QUEUE', 'ADD NEW TASK TO $printerHost');
-          return await printTaskNetwork(printerHost, printerPort, elements, tryOut);
+          logDebug(
+              'PRINTER QUEUE', 'ADD NEW TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] TO $printerHost');
+          return await printTaskNetwork(printerHost, printerPort, elements, tryOut, taskTime: taskTime);
         });
-        logDebug('PRINTER QUEUE', 'A TASK IN $printerHost COMPLETED WITH ${result.toString()}');
+        logDebug('PRINTER QUEUE',
+            'TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] IN $printerHost COMPLETED WITH ${result.toString()}');
       }
       return result;
     } catch (e) {
@@ -57,6 +62,7 @@ abstract class GastroPrinting extends PrintHelper {
         printerStatus: 'PRINT FAILED',
         printerException: 'PRINT FAILED',
         exception: e.toString(),
+        taskTime: taskTime,
       );
     }
   }
@@ -86,18 +92,30 @@ abstract class GastroPrinting extends PrintHelper {
     String printerHost,
     int printerPort,
     List<PrintElement> elements,
-    int tryOut,
-  ) async {
-    PrintResult result = await connectNetworkPrinter(printerHost, printerPort, tryOut);
+    int tryOut, {
+    DateTime? taskTime,
+  }) async {
+    PrintResult result = await connectNetworkPrinter(
+      printerHost,
+      printerPort,
+      tryOut,
+      taskTime: taskTime,
+    );
     if (result.success) {
       try {
         final profile = await CapabilityProfile.load();
         final generator = Generator(PaperSize.mm80, profile);
 
         List<int> bytes = bytesGenerator(generator, elements);
-        result = await sendBytesToNetworkPrinter(printerHost, printerPort, bytes);
+        result = await sendBytesToNetworkPrinter(
+          printerHost,
+          printerPort,
+          bytes,
+          taskTime: taskTime,
+          sendType: 'PRINT DATA',
+        );
         if (result.printerException.contains('20, 0, 64, 15')) {
-          result = await connectNetworkPrinter(printerHost, printerPort, 1);
+          result = await connectNetworkPrinter(printerHost, printerPort, 1, taskTime: taskTime);
         } else if (result.printerException.contains('28, 0, 12, 15')) {
           result = PrintResult(
             success: false,
@@ -105,6 +123,7 @@ abstract class GastroPrinting extends PrintHelper {
             printerStatus: 'OFFLINE',
             printerException: result.printerException,
             exception: 'DUE TO OUT OF PAPER',
+            taskTime: taskTime,
           );
         }
       } catch (e) {
@@ -114,6 +133,7 @@ abstract class GastroPrinting extends PrintHelper {
           printerStatus: e.toString(),
           printerException: e.toString(),
           exception: 'DUE TO ${e.toString()}',
+          taskTime: taskTime,
         );
       }
     }
@@ -145,8 +165,10 @@ abstract class GastroPrinting extends PrintHelper {
     return result;
   }
 
-  Future<PrintResult> connectNetworkPrinter(String printerHost, int printerPort, int tryOut) async {
-    PrintResult pingResult = await ping(printerHost, printerPort, Duration(milliseconds: 400), tryOut);
+  Future<PrintResult> connectNetworkPrinter(String printerHost, int printerPort, int tryOut,
+      {DateTime? taskTime}) async {
+    PrintResult pingResult =
+        await ping(printerHost, printerPort, Duration(milliseconds: 400), tryOut, taskTime: taskTime);
     if (pingResult.success) {
       final List<int> checkPrinter = <int>[
         int.parse('1D', radix: 16),
@@ -154,9 +176,11 @@ abstract class GastroPrinting extends PrintHelper {
         int.parse('0F', radix: 16)
       ];
       int reCheck = 0;
-      PrintResult statusResult = await sendBytesToNetworkPrinter(printerHost, printerPort, checkPrinter);
+      PrintResult statusResult = await sendBytesToNetworkPrinter(printerHost, printerPort, checkPrinter,
+          taskTime: taskTime, sendType: 'CHECK PRINTER STATUS $reCheck');
       while (!statusResult.success && reCheck < tryOut) {
-        statusResult = await sendBytesToNetworkPrinter(printerHost, printerPort, checkPrinter);
+        statusResult = await sendBytesToNetworkPrinter(printerHost, printerPort, checkPrinter,
+            sendType: 'CHECK PRINTER STATUS $reCheck');
         reCheck++;
       }
       return statusResult;

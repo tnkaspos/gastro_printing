@@ -4,6 +4,7 @@ class PrintResult {
   final String printerStatus;
   final String printerException;
   final String exception;
+  final DateTime? taskTime;
 
   const PrintResult({
     required this.success,
@@ -11,10 +12,11 @@ class PrintResult {
     required this.printerStatus,
     required this.printerException,
     required this.exception,
+    this.taskTime,
   });
 
   @override
   String toString() {
-    return 'PrintResult(success: $success, printerHost: $printerHost, printerStatus: $printerStatus, printerException: $printerException, exception: $exception)';
+    return 'PrintResult(time: ${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}, success: $success, printerHost: $printerHost, printerStatus: $printerStatus, printerException: $printerException, exception: $exception)';
   }
 }

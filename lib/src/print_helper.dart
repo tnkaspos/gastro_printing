@@ -84,37 +84,46 @@ abstract class PrintHelper {
   }
 
   ///Network
-  Future<PrintResult> ping(String host, int port, Duration timeout, int tryOut) async {
+  Future<PrintResult> ping(String host, int port, Duration timeout, int tryOut, {DateTime? taskTime}) async {
     late Socket _socket;
     bool connected = false;
     String status = 'CONNECTED';
     String exception = 'OK';
     int reCheck = 0;
-    while (reCheck < tryOut) {
+    while (reCheck < tryOut && !connected) {
       try {
         _socket = await Socket.connect(host, port, timeout: timeout);
         _socket.destroy();
         connected = true;
         status = 'CONNECTED';
         exception = 'OK';
+        logDebug(
+          'PRINTER RESPONSE',
+          'FOR PING TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] $host RETURNED $status',
+        );
       } catch (e) {
         connected = false;
         status = 'DISCONNECTED';
         exception = e.toString();
+        logDebug(
+          'PRINTER RESPONSE',
+          'FOR PING TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] $host RETURNED $status',
+        );
       }
       reCheck++;
     }
-
     return PrintResult(
       success: connected,
       printerHost: host,
       printerStatus: status,
       printerException: status,
       exception: exception,
+      taskTime: taskTime,
     );
   }
 
-  Future<PrintResult> sendBytesToNetworkPrinter(String host, int port, List<int> command) async {
+  Future<PrintResult> sendBytesToNetworkPrinter(String host, int port, List<int> command,
+      {DateTime? taskTime, String sendType = 'UNKNOWN'}) async {
     String _secureResponse = '20, 0, 0, 15';
     String _printerResponse = 'TIME OUT';
     late Socket _socket;
@@ -143,13 +152,15 @@ abstract class PrintHelper {
       _printerResponse = await _completer.future.timeout(Duration(seconds: 5), onTimeout: () {
         throw Exception('TIME OUT');
       });
-      logDebug('PRINTER RESPONSE', '$host RETURNED $_printerResponse');
+      logDebug('PRINTER RESPONSE',
+          'FOR $sendType TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] $host RETURNED $_printerResponse');
       return PrintResult(
         success: _printerResponse.contains(_secureResponse),
         printerHost: host,
         printerStatus: _printerResponse.contains(_secureResponse) ? 'ONLINE' : _printerResponse,
         printerException: _printerResponse.contains(_secureResponse) ? '' : _printerResponse,
         exception: 'OK',
+        taskTime: taskTime,
       );
     } catch (e) {
       return PrintResult(
@@ -158,6 +169,7 @@ abstract class PrintHelper {
         printerStatus: _printerResponse,
         printerException: e.toString(),
         exception: e.toString(),
+        taskTime: taskTime,
       );
     }
   }
