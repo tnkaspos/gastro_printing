@@ -40,7 +40,7 @@ class PrintElement {
 
   factory PrintElement.fromOneCol({
     required PrintContent content,
-    bool center = true,
+    int alignment = 1,
   }) {
     PosTextSize contentHeight;
     switch (content.textHeight) {
@@ -72,6 +72,20 @@ class PrintElement {
         contentWidth = PosTextSize.size1;
     }
 
+    PosAlign align;
+    switch (alignment) {
+      case 0:
+        align = PosAlign.left;
+        break;
+      case 1:
+        align = PosAlign.center;
+        break;
+      case 2:
+        align = PosAlign.right;
+        break;
+      default:
+        align = PosAlign.center;
+    }
     List<PosColumn> contentList = [
       PosColumn(
           text: content.data!,
@@ -80,7 +94,7 @@ class PrintElement {
           truncatable: content.truncatable,
           overridable: content.overridable,
           styles: PosStyles(
-            align: center ? PosAlign.center : PosAlign.right,
+            align: align,
             bold: content.textBold,
             codeTable: content.codePage,
             fontType: content.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
@@ -92,13 +106,13 @@ class PrintElement {
     return PrintElement(contentList);
   }
 
-  factory PrintElement.fromTwoCols({
-    required PrintContent leftContent,
-    required PrintContent rightContent,
+  factory PrintElement.fromTwoCol({
+    required PrintContent left,
+    required PrintContent right,
     bool rightAlign = true,
   }) {
     PosTextSize leftContentHeight;
-    switch (leftContent.textHeight) {
+    switch (left.textHeight) {
       case 1:
         leftContentHeight = PosTextSize.size1;
         break;
@@ -113,7 +127,7 @@ class PrintElement {
     }
 
     PosTextSize leftContentWidth;
-    switch (leftContent.textWidth) {
+    switch (left.textWidth) {
       case 1:
         leftContentWidth = PosTextSize.size1;
         break;
@@ -128,7 +142,7 @@ class PrintElement {
     }
 
     PosTextSize rightContentHeight;
-    switch (rightContent.textHeight) {
+    switch (right.textHeight) {
       case 1:
         rightContentHeight = PosTextSize.size1;
         break;
@@ -143,7 +157,7 @@ class PrintElement {
     }
 
     PosTextSize rightContentWidth;
-    switch (rightContent.textWidth) {
+    switch (right.textWidth) {
       case 1:
         rightContentWidth = PosTextSize.size1;
         break;
@@ -159,47 +173,47 @@ class PrintElement {
 
     List<PosColumn> contentList = [
       PosColumn(
-          text: leftContent.data!,
-          width: leftContent.width,
-          margin: leftContent.margin,
-          truncatable: leftContent.truncatable,
-          overridable: leftContent.overridable,
+          text: left.data!,
+          width: left.width,
+          margin: left.margin,
+          truncatable: left.truncatable,
+          overridable: left.overridable,
           styles: PosStyles(
             align: PosAlign.left,
-            bold: leftContent.textBold,
+            bold: left.textBold,
             codeTable: 'CP1252',
-            fontType: leftContent.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
+            fontType: left.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
             height: leftContentHeight,
             width: leftContentWidth,
-            reverse: leftContent.textReverse,
+            reverse: left.textReverse,
           )),
       PosColumn(
-          text: rightContent.data!,
-          width: rightContent.width,
-          margin: rightContent.margin,
-          truncatable: rightContent.truncatable,
-          overridable: rightContent.overridable,
+          text: right.data!,
+          width: right.width,
+          margin: right.margin,
+          truncatable: right.truncatable,
+          overridable: right.overridable,
           styles: PosStyles(
             align: rightAlign ? PosAlign.right : PosAlign.left,
-            bold: rightContent.textBold,
+            bold: right.textBold,
             codeTable: 'CP1252',
-            fontType: rightContent.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
+            fontType: right.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
             height: rightContentHeight,
             width: rightContentWidth,
-            reverse: rightContent.textReverse,
+            reverse: right.textReverse,
           )),
     ];
     return PrintElement(contentList);
   }
 
   factory PrintElement.fromThreeCol({
-    required PrintContent firstContent,
-    required PrintContent secondContent,
-    required PrintContent thirdContent,
+    required PrintContent first,
+    required PrintContent second,
+    required PrintContent third,
     bool center = false,
   }) {
     PosTextSize firstContentHeight;
-    switch (firstContent.textHeight) {
+    switch (first.textHeight) {
       case 1:
         firstContentHeight = PosTextSize.size1;
         break;
@@ -214,7 +228,7 @@ class PrintElement {
     }
 
     PosTextSize secondContentHeight;
-    switch (secondContent.textHeight) {
+    switch (second.textHeight) {
       case 1:
         secondContentHeight = PosTextSize.size1;
         break;
@@ -229,7 +243,7 @@ class PrintElement {
     }
 
     PosTextSize thirdContentHeight;
-    switch (thirdContent.textHeight) {
+    switch (third.textHeight) {
       case 1:
         thirdContentHeight = PosTextSize.size1;
         break;
@@ -244,7 +258,7 @@ class PrintElement {
     }
 
     PosTextSize firstContentWidth;
-    switch (firstContent.textWidth) {
+    switch (first.textWidth) {
       case 1:
         firstContentWidth = PosTextSize.size1;
         break;
@@ -259,7 +273,7 @@ class PrintElement {
     }
 
     PosTextSize secondContentWidth;
-    switch (secondContent.textWidth) {
+    switch (second.textWidth) {
       case 1:
         secondContentWidth = PosTextSize.size1;
         break;
@@ -274,7 +288,7 @@ class PrintElement {
     }
 
     PosTextSize thirdContentWidth;
-    switch (thirdContent.textWidth) {
+    switch (third.textWidth) {
       case 1:
         thirdContentWidth = PosTextSize.size1;
         break;
@@ -290,55 +304,55 @@ class PrintElement {
 
     List<PosColumn> contentList = [
       PosColumn(
-          text: firstContent.data!,
-          width: firstContent.width,
-          margin: firstContent.margin,
-          truncatable: firstContent.truncatable,
-          overridable: firstContent.overridable,
+          text: first.data!,
+          width: first.width,
+          margin: first.margin,
+          truncatable: first.truncatable,
+          overridable: first.overridable,
           styles: PosStyles(
             align: PosAlign.left,
-            bold: firstContent.textBold,
+            bold: first.textBold,
             codeTable: 'CP1252',
-            fontType: firstContent.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
+            fontType: first.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
             height: firstContentHeight,
             width: firstContentWidth,
-            reverse: firstContent.textReverse,
+            reverse: first.textReverse,
           )),
       PosColumn(
-          text: secondContent.data!,
-          width: secondContent.width,
-          margin: secondContent.margin,
-          truncatable: secondContent.truncatable,
-          overridable: secondContent.overridable,
+          text: second.data!,
+          width: second.width,
+          margin: second.margin,
+          truncatable: second.truncatable,
+          overridable: second.overridable,
           styles: PosStyles(
             align: center ? PosAlign.center : PosAlign.left,
-            bold: secondContent.textBold,
+            bold: second.textBold,
             codeTable: 'CP1252',
-            fontType: secondContent.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
+            fontType: second.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
             height: secondContentHeight,
             width: secondContentWidth,
-            reverse: secondContent.textReverse,
+            reverse: second.textReverse,
           )),
       PosColumn(
-          text: thirdContent.data!,
-          width: thirdContent.width,
-          margin: thirdContent.margin,
-          truncatable: thirdContent.truncatable,
-          overridable: thirdContent.overridable,
+          text: third.data!,
+          width: third.width,
+          margin: third.margin,
+          truncatable: third.truncatable,
+          overridable: third.overridable,
           styles: PosStyles(
             align: PosAlign.right,
-            bold: thirdContent.textBold,
+            bold: third.textBold,
             codeTable: 'CP1252',
-            fontType: thirdContent.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
+            fontType: third.textFont == 'Font A' ? PosFontType.fontA : PosFontType.fontB,
             height: thirdContentHeight,
             width: thirdContentWidth,
-            reverse: thirdContent.textReverse,
+            reverse: third.textReverse,
           )),
     ];
     return PrintElement(contentList);
   }
 
-  factory PrintElement.fromSixCols({
+  factory PrintElement.fromSixCol({
     required PrintContent first,
     required PrintContent second,
     required PrintContent third,
