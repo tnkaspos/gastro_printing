@@ -193,7 +193,7 @@ abstract class PrintHelper {
   }
 
   Future<String> getPairedBluetooth() async {
-    List<BluetoothInfo> pairedDevices = await PrintBluetoothThermal.pairedBluetooth;
+    List<BluetoothInfo> pairedDevices = await PrintBluetoothThermal.pairedBluetooths;
     return jsonEncode(pairedDevices);
   }
 

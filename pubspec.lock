@@ -74,9 +74,11 @@ packages:
   esc_pos_utils:
     dependency: "direct main"
     description:
-      path: "D:/TNKAS/Flutter/Package Null Safety/esc_pos_utils"
-      relative: false
-    source: path
+      path: "."
+      ref: "25812ac34e9015f59fe10191a9a8f42493c2c39b"
+      resolved-ref: "25812ac34e9015f59fe10191a9a8f42493c2c39b"
+      url: "https://github.com/DucPhan13/esc_pos_utils.git"
+    source: git
     version: "2.0.0"
   fake_async:
     dependency: transitive
@@ -169,11 +171,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: ce029ab585b4ebaa301a0f9de35f0b235a780e92
-      resolved-ref: ce029ab585b4ebaa301a0f9de35f0b235a780e92
+      ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
+      resolved-ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
       url: "https://github.com/DucPhan13/print_bluetooth_termal.git"
     source: git
-    version: "1.0.2"
+    version: "1.0.4"
   queue:
     dependency: "direct main"
     description:

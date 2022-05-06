@@ -14,17 +14,16 @@ dependencies:
   print_bluetooth_thermal:
     git:
       url: https://github.com/DucPhan13/print_bluetooth_termal.git
-      ref: ce029ab585b4ebaa301a0f9de35f0b235a780e92
+      ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
   queue: ^3.1.0+1
   flutter:
     sdk: flutter
 
 dependency_overrides:
   esc_pos_utils:
-    path: D:/TNKAS/Flutter/Package Null Safety/esc_pos_utils
-#  esc_pos_utils:
-#    git:
-#      url: https://github.com/DucPhan13/esc_pos_utils.git
+    git:
+      url: https://github.com/DucPhan13/esc_pos_utils.git
+      ref: 25812ac34e9015f59fe10191a9a8f42493c2c39b
 
 dev_dependencies:
   flutter_test:
