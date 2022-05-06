@@ -173,7 +173,7 @@ packages:
       path: "."
       ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
       resolved-ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
-      url: "https://github.com/DucPhan13/print_bluetooth_termal.git"
+      url: "https://github.com/DucPhan13/print_bluetooth_thermal.git"
     source: git
     version: "1.0.4"
   queue:
