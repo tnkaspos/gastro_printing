@@ -75,7 +75,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: da5110ac433b4376a30a8362f453cba1ddced3da
+      ref: master
       resolved-ref: da5110ac433b4376a30a8362f453cba1ddced3da
       url: "https://github.com/DucPhan13/esc_pos_utils.git"
     source: git
@@ -171,7 +171,7 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
+      ref: master
       resolved-ref: a427431ca7c674763170917c09d1ba4be6c4a9e9
       url: "https://github.com/DucPhan13/print_bluetooth_thermal.git"
     source: git
