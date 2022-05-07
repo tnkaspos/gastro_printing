@@ -23,7 +23,7 @@ dependency_overrides:
   esc_pos_utils:
     git:
       url: https://github.com/DucPhan13/esc_pos_utils.git
-      ref: 25812ac34e9015f59fe10191a9a8f42493c2c39b
+      ref: da5110ac433b4376a30a8362f453cba1ddced3da
 
 dev_dependencies:
   flutter_test:
