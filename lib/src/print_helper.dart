@@ -84,7 +84,15 @@ abstract class PrintHelper {
   }
 
   ///Network
-  Future<PrintResult> ping(String host, int port, Duration timeout, int tryOut, {DateTime? taskTime}) async {
+  Future<PrintResult> ping(
+    String host,
+    int port,
+    Duration timeout,
+    int tryOut, {
+    DateTime? taskTime,
+    String service = '',
+    String source = '',
+  }) async {
     late Socket _socket;
     bool connected = false;
     String status = 'CONNECTED';
@@ -99,7 +107,7 @@ abstract class PrintHelper {
         exception = 'OK';
         logDebug(
           'PRINTER RESPONSE',
-          'FOR PING TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] $host RETURNED $status',
+          'FOR PING TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] $host RETURNED $status',
         );
       } catch (e) {
         connected = false;
@@ -107,7 +115,7 @@ abstract class PrintHelper {
         exception = e.toString();
         logDebug(
           'PRINTER RESPONSE',
-          'FOR PING TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] $host RETURNED $status',
+          'FOR PING TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] $host RETURNED $status',
         );
       }
       reCheck++;
@@ -122,8 +130,15 @@ abstract class PrintHelper {
     );
   }
 
-  Future<PrintResult> sendBytesToNetworkPrinter(String host, int port, List<int> command,
-      {DateTime? taskTime, String sendType = 'UNKNOWN'}) async {
+  Future<PrintResult> sendBytesToNetworkPrinter(
+    String host,
+    int port,
+    List<int> command, {
+    DateTime? taskTime,
+    String sendType = 'UNKNOWN',
+    String service = '',
+    String source = '',
+  }) async {
     String _secureResponse = '20, 0, 0, 15';
     String _printerResponse = 'TIME OUT';
     late Socket _socket;
@@ -153,7 +168,7 @@ abstract class PrintHelper {
         throw Exception('TIME OUT');
       });
       logDebug('PRINTER RESPONSE',
-          'FOR $sendType TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch}] $host RETURNED $_printerResponse');
+          'FOR $sendType TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] $host RETURNED $_printerResponse');
       return PrintResult(
         success: _printerResponse.contains(_secureResponse),
         printerHost: host,
