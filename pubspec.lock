@@ -7,7 +7,7 @@ packages:
       name: archive
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.1.2"
+    version: "3.3.0"
   async:
     dependency: transitive
     description:
@@ -42,7 +42,7 @@ packages:
       name: charset_converter
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "2.0.0"
+    version: "2.1.0"
   clock:
     dependency: transitive
     description:
@@ -63,7 +63,7 @@ packages:
       name: crypto
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.1"
+    version: "3.0.2"
   esc_pos_printer:
     dependency: "direct main"
     description:
@@ -76,7 +76,7 @@ packages:
     description:
       path: "."
       ref: master
-      resolved-ref: da5110ac433b4376a30a8362f453cba1ddced3da
+      resolved-ref: "8cd8355619ffd4f0f5131531df8bb27147e34f2a"
       url: "https://github.com/DucPhan13/esc_pos_utils.git"
     source: git
     version: "2.0.0"
@@ -166,7 +166,7 @@ packages:
       name: petitparser
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "4.1.0"
+    version: "4.4.0"
   print_bluetooth_thermal:
     dependency: "direct main"
     description:
@@ -250,7 +250,7 @@ packages:
       name: xml
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "5.1.2"
+    version: "5.3.1"
 sdks:
   dart: ">=2.14.0 <3.0.0"
   flutter: ">=1.20.0"
