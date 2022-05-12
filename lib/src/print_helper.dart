@@ -141,7 +141,7 @@ abstract class PrintHelper {
     String source = '',
   }) async {
     String _secureResponse = '20, 0, 0, 15';
-    String _printerResponse = 'TIME OUT';
+    String _printerResponse = '';
     late Socket _socket;
     Completer<String> _completer = Completer<String>();
 
@@ -165,7 +165,12 @@ abstract class PrintHelper {
       }), onDone: () async {
         _socket.destroy();
       }, cancelOnError: false);
-      _printerResponse = await _completer.future.timeout(timeout, onTimeout: () => throw Exception('TIME OUT'));
+      _printerResponse = await _completer.future.timeout(
+        Duration(seconds: timeout.inSeconds * 5),
+        onTimeout: () {
+          throw Exception('TIME OUT');
+        },
+      );
       logDebug('PRINTER RESPONSE',
           'FOR $sendType TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] $host RETURNED $_printerResponse');
       return PrintResult(
