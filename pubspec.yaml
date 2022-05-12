@@ -21,10 +21,10 @@ dependencies:
 
 dependency_overrides:
   esc_pos_utils:
-#    git:
-#      url: https://github.com/DucPhan13/esc_pos_utils.git
-#      ref: master
-     path: D:/TNKAS/Flutter/Package Null Safety/esc_pos_utils
+    git:
+      url: https://github.com/DucPhan13/esc_pos_utils.git
+      ref: master
+#   path: D:/TNKAS/Flutter/Package Null Safety/esc_pos_utils
 dev_dependencies:
   flutter_test:
     sdk: flutter
