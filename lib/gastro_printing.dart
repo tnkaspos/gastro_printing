@@ -31,6 +31,7 @@ abstract class GastroPrinting extends PrintHelper {
     int printerPort,
     List<PrintElement> elements, {
     int tryOut = 5,
+    Duration timeout = const Duration(seconds: 1),
     DateTime? taskTime,
     String service = '',
     String source = '',
@@ -47,6 +48,7 @@ abstract class GastroPrinting extends PrintHelper {
             elements,
             tryOut,
             taskTime: taskTime,
+            timeout: timeout,
             service: service,
             source: source,
           );
@@ -59,7 +61,14 @@ abstract class GastroPrinting extends PrintHelper {
         result = await printerQueue[printerHost]!.add(() async {
           logDebug('PRINTER QUEUE',
               'ADD NEW TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] TO $printerHost');
-          return await printTaskNetwork(printerHost, printerPort, elements, tryOut, taskTime: taskTime);
+          return await printTaskNetwork(
+            printerHost,
+            printerPort,
+            elements,
+            tryOut,
+            taskTime: taskTime,
+            timeout: timeout,
+          );
         });
         logDebug('PRINTER QUEUE',
             'TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] IN $printerHost COMPLETED WITH ${result.toString()}');
@@ -103,6 +112,7 @@ abstract class GastroPrinting extends PrintHelper {
     int printerPort,
     List<PrintElement> elements,
     int tryOut, {
+    Duration timeout = const Duration(seconds: 1),
     DateTime? taskTime,
     String service = '',
     String source = '',
@@ -112,6 +122,7 @@ abstract class GastroPrinting extends PrintHelper {
       printerPort,
       tryOut,
       taskTime: taskTime,
+      timeout: timeout,
       service: service,
       source: source,
     );
@@ -126,6 +137,7 @@ abstract class GastroPrinting extends PrintHelper {
           printerPort,
           bytes,
           taskTime: taskTime,
+          timeout: timeout,
           sendType: 'PRINT DATA',
           service: service,
           source: source,
@@ -136,6 +148,7 @@ abstract class GastroPrinting extends PrintHelper {
             printerPort,
             1,
             taskTime: taskTime,
+            timeout: timeout,
             service: service,
             source: source,
           );
@@ -193,14 +206,15 @@ abstract class GastroPrinting extends PrintHelper {
     int printerPort,
     int tryOut, {
     DateTime? taskTime,
+    Duration timeout = const Duration(seconds: 1),
     String service = '',
     String source = '',
   }) async {
     PrintResult pingResult = await ping(
       printerHost,
       printerPort,
-      Duration(seconds: 1),
       tryOut,
+      timeout: timeout,
       taskTime: taskTime,
       service: service,
       source: source,
@@ -217,6 +231,7 @@ abstract class GastroPrinting extends PrintHelper {
         printerPort,
         checkPrinter,
         taskTime: taskTime,
+        timeout: Duration(seconds: timeout.inSeconds * 5),
         sendType: 'CHECK PRINTER STATUS $reCheck',
         service: service,
         source: source,
@@ -226,6 +241,8 @@ abstract class GastroPrinting extends PrintHelper {
           printerHost,
           printerPort,
           checkPrinter,
+          taskTime: taskTime,
+          timeout: Duration(seconds: timeout.inSeconds * 5),
           sendType: 'CHECK PRINTER STATUS $reCheck',
           service: service,
           source: source,

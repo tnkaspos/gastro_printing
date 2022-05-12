@@ -87,9 +87,9 @@ abstract class PrintHelper {
   Future<PrintResult> ping(
     String host,
     int port,
-    Duration timeout,
     int tryOut, {
     DateTime? taskTime,
+    Duration timeout = const Duration(seconds: 1),
     String service = '',
     String source = '',
   }) async {
@@ -134,6 +134,7 @@ abstract class PrintHelper {
     String host,
     int port,
     List<int> command, {
+    Duration timeout = const Duration(seconds: 5),
     DateTime? taskTime,
     String sendType = 'UNKNOWN',
     String service = '',
@@ -145,7 +146,7 @@ abstract class PrintHelper {
     Completer<String> _completer = Completer<String>();
 
     try {
-      _socket = await Socket.connect(host, port, timeout: const Duration(seconds: 1));
+      _socket = await Socket.connect(host, port, timeout: timeout);
 
       /// SENT TO SERVER ************************
       _socket.add(command);
@@ -164,9 +165,7 @@ abstract class PrintHelper {
       }), onDone: () async {
         _socket.destroy();
       }, cancelOnError: false);
-      _printerResponse = await _completer.future.timeout(Duration(seconds: 5), onTimeout: () {
-        throw Exception('TIME OUT');
-      });
+      _printerResponse = await _completer.future.timeout(timeout, onTimeout: () => throw Exception('TIME OUT'));
       logDebug('PRINTER RESPONSE',
           'FOR $sendType TASK [${(taskTime ?? DateTime.now()).millisecondsSinceEpoch} - $service - $source] $host RETURNED $_printerResponse');
       return PrintResult(
