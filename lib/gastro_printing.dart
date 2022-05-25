@@ -193,7 +193,6 @@ abstract class GastroPrinting extends PrintHelper {
       List<int> bytes = bytesGenerator(printer, elements);
       final PosPrintResult res = await printerManager.printTicket(bytes);
       result = (res.value == 1);
-      logDebug('BLUETOOTH PRINTER', res.msg);
     } catch (e) {
       logDebug('PRINTING EXCEPTION', e.toString());
     }
