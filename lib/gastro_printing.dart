@@ -3,9 +3,10 @@ library gastro_printing;
 import 'dart:convert';
 import 'dart:core';
 
+import 'package:esc_pos_bluetooth/esc_pos_bluetooth.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 import 'package:gastro_printing/src/print.dart';
-import 'package:print_bluetooth_thermal/print_bluetooth_thermal.dart';
 import 'package:queue/queue.dart';
 
 export 'src/print.dart';
@@ -88,7 +89,10 @@ abstract class GastroPrinting extends PrintHelper {
 
   Future<bool> printBluetoothElements(String deviceName, String deviceAddress, List<PrintElement> elements) async {
     try {
-      BluetoothInfo blueDevice = BluetoothInfo(name: deviceName, macAddress: deviceAddress);
+      BluetoothDevice bluetoothDevice = BluetoothDevice();
+      bluetoothDevice.name = deviceName;
+      bluetoothDevice.address = deviceAddress;
+      PrinterBluetooth blueDevice = PrinterBluetooth(bluetoothDevice);
       if (printerQueue.containsKey(deviceAddress)) {
         return await printerQueue[deviceAddress]!.add(() async {
           return await printTaskBluetooth(blueDevice, elements);
@@ -176,24 +180,20 @@ abstract class GastroPrinting extends PrintHelper {
     return result;
   }
 
-  Future<bool> printTaskBluetooth(BluetoothInfo bluetoothPrinter, List<PrintElement> elements) async {
-    bool connectionStatus = await PrintBluetoothThermal.connectionStatus;
-    if (connectionStatus) {
-      await PrintBluetoothThermal.disconnect;
-    }
+  Future<bool> printTaskBluetooth(PrinterBluetooth bluetoothPrinter, List<PrintElement> elements) async {
+    PrinterBluetoothManager printerManager = PrinterBluetoothManager();
+    printerManager.selectPrinter(bluetoothPrinter);
 
-    connectionStatus = await PrintBluetoothThermal.connect(macPrinterAddress: bluetoothPrinter.macAddress);
     bool result = false;
 
     try {
       final profile = await CapabilityProfile.load();
       final printer = Generator(PaperSize.mm58, profile);
 
-      if (connectionStatus) {
-        List<int> bytes = bytesGenerator(printer, elements);
-        result = await PrintBluetoothThermal.writeBytes(bytes);
-        await PrintBluetoothThermal.disconnect;
-      }
+      List<int> bytes = bytesGenerator(printer, elements);
+      final PosPrintResult res = await printerManager.printTicket(bytes);
+
+      logDebug('BLUETOOTH PRINTER', res.msg);
     } catch (e) {
       logDebug('PRINTING EXCEPTION', e.toString());
     }

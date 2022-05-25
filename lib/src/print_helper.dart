@@ -216,18 +216,6 @@ abstract class PrintHelper {
     return jsonEncode(pairedDevices);
   }
 
-  Future<bool> connectBluetoothDevice(String macAddress) async {
-    return await PrintBluetoothThermal.connect(macPrinterAddress: macAddress);
-  }
-
-  Future<bool> disconnectBluetoothDevice() async {
-    if (await PrintBluetoothThermal.connectionStatus) {
-      return await PrintBluetoothThermal.disconnect;
-    } else {
-      return true;
-    }
-  }
-
   void logDebug(String header, String content) {
     printWrapped('PRINTING LOG: [$header] $content');
   }
